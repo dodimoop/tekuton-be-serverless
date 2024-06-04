@@ -1,0 +1,105 @@
+service: my-serverless-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: dev
+  environment:
+    JWT_SECRET: "!niSecretK3yTekuton"
+
+functions:
+  # AUTHORIZER
+  jwtAuthorizer:
+    handler: src/authorizers/jwtAuthorizer.handler
+
+  # USER LOGIN
+  loginUser:
+    handler: src/login.loginUser
+    events:
+      - http:
+          path: /loginUser
+          method: post
+
+  # USERS
+  getAllUsers:
+    handler: src/users.getAllUsers
+    events:
+      - http:
+          path: /getAllUsers
+          method: get
+          authorizer:
+            name: jwtAuthorizer
+
+  createUser:
+    handler: src/users.createUser
+    events:
+      - http:
+          path: /createUser
+          method: post
+          authorizer:
+            name: jwtAuthorizer
+
+  updateUser:
+    handler: src/users.updateUser
+    events:
+      - http:
+          path: /updateUser/{id}
+          method: put
+          authorizer:
+            name: jwtAuthorizer
+
+  removeUser:
+    handler: src/users.removeUser
+    events:
+      - http:
+          path: /removeUser/{id}
+          method: delete
+          authorizer:
+            name: jwtAuthorizer
+
+  # HOBBY
+  getAllHobbies:
+    handler: src/hobby.getAllHobbies
+    events:
+      - http:
+          path: /getAllHobbies
+          method: get
+          authorizer:
+            name: jwtAuthorizer
+
+  createHobby:
+    handler: src/hobby.createHobby
+    events:
+      - http:
+          path: /createHobby
+          method: post
+          authorizer:
+            name: jwtAuthorizer
+
+  updateHobby:
+    handler: src/hobby.updateHobby
+    events:
+      - http:
+          path: /updateHobby/{id}
+          method: put
+          authorizer:
+            name: jwtAuthorizer
+
+  removeHobby:
+    handler: src/hobby.removeHobby
+    events:
+      - http:
+          path: /removeHobby/{id}
+          method: delete
+          authorizer:
+            name: jwtAuthorizer
+
+plugins:
+  # list of plugins that we need to run serverless locally
+  - serverless-plugin-typescript
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
