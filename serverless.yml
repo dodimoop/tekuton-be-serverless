@@ -21,6 +21,14 @@ functions:
           path: /loginUser
           method: post
 
+  # USER REGISTER
+  createUserRegister:
+    handler: src/users.createUser
+    events:
+      - http:
+          path: /createUserRegister
+          method: post
+
   # USER LOGIN DETAIL
   meProfile:
     handler: src/users.meProfile
