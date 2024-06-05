@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeUser = exports.updateUser = exports.createUser = exports.getAllUsers = void 0;
+exports.meProfile = exports.removeUser = exports.updateUser = exports.createUser = exports.getAllUsers = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 const configDatabase_1 = require("./config/configDatabase");
 const usersModels_1 = __importDefault(require("./models/usersModels"));
@@ -216,3 +216,56 @@ const removeUser = async (event) => {
     }
 };
 exports.removeUser = removeUser;
+const meProfile = async (event) => {
+    var _a;
+    const userId = (_a = event.requestContext.authorizer) === null || _a === void 0 ? void 0 : _a.userId; // Get userId from authorizer User Login
+    if (!userId) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify({
+                success: false,
+                message: "Unauthorized. User ID is required.",
+            }),
+        };
+    }
+    try {
+        // Connect to the database
+        await (0, configDatabase_1.connectToDatabase)();
+        // Find the user by ID
+        const user = await usersModels_1.default.findById(userId).populate("hobby_ids");
+        if (!user) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({
+                    success: false,
+                    message: "User not found.",
+                }),
+            };
+        }
+        const payload = {
+            success: true,
+            message: "User details fetched successfully!",
+            data: user,
+        };
+        return {
+            statusCode: 200,
+            body: JSON.stringify(payload),
+        };
+    }
+    catch (error) {
+        console.error("Error fetching user details:", error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                success: false,
+                message: "Failed to fetch user details.",
+                error: error.message,
+            }),
+        };
+    }
+    finally {
+        // Close the database connection
+        await (0, configDatabase_1.closeDatabaseConnection)();
+    }
+};
+exports.meProfile = meProfile;

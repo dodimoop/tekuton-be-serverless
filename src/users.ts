@@ -236,3 +236,58 @@ export const removeUser: APIGatewayProxyHandler = async (event) => {
   }
 };
 
+export const meProfile: APIGatewayProxyHandler = async (event) => {
+  const userId = event.requestContext.authorizer?.userId; // Get userId from authorizer User Login
+
+  if (!userId) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({
+        success: false,
+        message: "Unauthorized. User ID is required.",
+      }),
+    };
+  }
+
+  try {
+    // Connect to the database
+    await connectToDatabase();
+
+    // Find the user by ID
+    const user = await User.findById(userId).populate("hobby_ids");
+
+    if (!user) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          success: false,
+          message: "User not found.",
+        }),
+      };
+    }
+
+    const payload = {
+      success: true,
+      message: "User details fetched successfully!",
+      data: user,
+    };
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(payload),
+    };
+  } catch (error: any) {
+    console.error("Error fetching user details:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        success: false,
+        message: "Failed to fetch user details.",
+        error: error.message,
+      }),
+    };
+  } finally {
+    // Close the database connection
+    await closeDatabaseConnection();
+  }
+};

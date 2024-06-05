@@ -4,7 +4,7 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
-  stage: dev
+  stage: api
   environment:
     JWT_SECRET: "!niSecretK3yTekuton"
 
@@ -20,6 +20,16 @@ functions:
       - http:
           path: /loginUser
           method: post
+
+  # USER LOGIN DETAIL
+  meProfile:
+    handler: src/users.meProfile
+    events:
+      - http:
+          path: /meProfile
+          method: get
+          authorizer:
+            name: jwtAuthorizer
 
   # USERS
   getAllUsers:
@@ -102,4 +112,4 @@ plugins:
 
 custom:
   serverless-offline:
-    httpPort: 3000
+    httpPort: 8000
