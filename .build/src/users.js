@@ -10,11 +10,17 @@ const usersModels_1 = __importDefault(require("./models/usersModels"));
 const passwordUtils_1 = require("./utils/passwordUtils");
 dotenv_1.default.config();
 const getAllUsers = async (event) => {
+    var _a;
     console.log("Connecting to database...");
     await (0, configDatabase_1.connectToDatabase)();
     try {
         console.log("Fetching users from database...");
-        const users = await usersModels_1.default.find({ hobby_ids: { $exists: true } }).populate("hobby_ids");
+        // Get All Users Except Yourself
+        const userId = (_a = event.requestContext.authorizer) === null || _a === void 0 ? void 0 : _a.userId;
+        const users = await usersModels_1.default.find({
+            _id: { $ne: userId },
+            hobby_ids: { $exists: true },
+        }).populate("hobby_ids");
         console.log("Users fetched: ", users);
         const response = {
             success: true,
@@ -64,17 +70,28 @@ const createUser = async (event) => {
             }),
         };
     }
-    const hashedPassword = await (0, passwordUtils_1.hashPassword)(password);
-    const newUser = new usersModels_1.default({
-        firstName,
-        lastName,
-        age,
-        email,
-        password: hashedPassword,
-        hobby_ids: hobby_ids !== null && hobby_ids !== void 0 ? hobby_ids : null,
-    });
+    // Check if email already exists
     await (0, configDatabase_1.connectToDatabase)();
     try {
+        const existingUser = await usersModels_1.default.findOne({ email });
+        if (existingUser) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    success: false,
+                    message: "Email is already in use. Please choose a different email.",
+                }),
+            };
+        }
+        const hashedPassword = await (0, passwordUtils_1.hashPassword)(password);
+        const newUser = new usersModels_1.default({
+            firstName,
+            lastName,
+            age,
+            email,
+            password: hashedPassword,
+            hobby_ids: hobby_ids !== null && hobby_ids !== void 0 ? hobby_ids : null,
+        });
         const result = await newUser.save();
         const payload = {
             success: true,
