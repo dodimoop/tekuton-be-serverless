@@ -15,9 +15,12 @@ export const getAllUsers: APIGatewayProxyHandler = async (event) => {
 
   try {
     console.log("Fetching users from database...");
-    const users = await User.find({ hobby_ids: { $exists: true } }).populate(
-      "hobby_ids"
-    );
+    // Get All Users Except Yourself
+    const userId = event.requestContext.authorizer?.userId;
+    const users = await User.find({
+      _id: { $ne: userId },
+      hobby_ids: { $exists: true },
+    }).populate("hobby_ids");
 
     console.log("Users fetched: ", users);
 
@@ -73,20 +76,32 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
     };
   }
 
-  const hashedPassword = await hashPassword(password);
-
-  const newUser = new User({
-    firstName,
-    lastName,
-    age,
-    email,
-    password: hashedPassword,
-    hobby_ids: hobby_ids ?? null,
-  });
-
+  // Check if email already exists
   await connectToDatabase();
-
   try {
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          success: false,
+          message: "Email is already in use. Please choose a different email.",
+        }),
+      };
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const newUser = new User({
+      firstName,
+      lastName,
+      age,
+      email,
+      password: hashedPassword,
+      hobby_ids: hobby_ids ?? null,
+    });
+
     const result = await newUser.save();
 
     const payload = {
